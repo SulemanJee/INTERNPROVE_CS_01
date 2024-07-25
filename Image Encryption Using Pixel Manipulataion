@@ -1,0 +1,56 @@
+from PIL import Image
+import random
+
+def generate_key(size):
+    return bytes([random.randint(0, 255) for _ in range(size)])
+
+def encrypt_image(input_path, output_path, key):
+    with Image.open(input_path) as img:
+        width, height = img.size
+        encrypted_img = Image.new(img.mode, img.size)
+        pixels = img.load()
+        encrypted_pixels = encrypted_img.load()
+
+        for x in range(width):
+            for y in range(height):
+                r, g, b = pixels[x, y]
+                kr, kg, kb = key[(x + y) % len(key)], key[(x + y + 1) % len(key)], key[(x + y + 2) % len(key)]
+                encrypted_pixels[x, y] = (r ^ kr, g ^ kg, b ^ kb)
+
+        encrypted_img.save(output_path)
+    print(f"Encrypted image saved as {output_path}")
+
+def decrypt_image(input_path, output_path, key):
+    # The decryption process is identical to encryption due to XOR properties
+    encrypt_image(input_path, output_path, key)
+    print(f"Decrypted image saved as {output_path}")
+
+def main():
+    while True:
+        print("\nImage Encryption Tool")
+        print("1. Encrypt an image")
+        print("2. Decrypt an image")
+        print("3. Exit")
+        
+        choice = input("Enter your choice (1/2/3): ")
+        
+        if choice == '3':
+            break
+        
+        input_path = input("Enter the path to the input image: ")
+        output_path = input("Enter the path for the output image: ")
+        
+        if choice == '1':
+            key = generate_key(256)
+            encrypt_image(input_path, output_path, key)
+            print("Keep this key safe for decryption:")
+            print(" ".join(f"{b:02x}" for b in key))
+        elif choice == '2':
+            key_str = input("Enter the decryption key (space-separated hex values): ")
+            key = bytes.fromhex(key_str.replace(" ", ""))
+            decrypt_image(input_path, output_path, key)
+        else:
+            print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    main()
